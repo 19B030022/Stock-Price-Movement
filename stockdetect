@@ -1,0 +1,75 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+from textblob import TextBlob  # Sentiment analysis library
+
+# Load your stock price data (e.g., historical closing prices) and sentiment analysis data
+# Ensure your data includes a date or timestamp column
+# Preprocess your data as needed
+
+# Example sentiment analysis function using TextBlob
+def get_sentiment(text):
+    analysis = TextBlob(text)
+    return analysis.sentiment.polarity
+
+# Apply sentiment analysis to your dataset
+# Replace 'text_column' with the column containing text data
+# Create a new column 'sentiment' to store sentiment scores
+# Example: df['sentiment'] = df['text_column'].apply(get_sentiment)
+
+# Combine and preprocess your data as needed
+
+# Split your data into training and testing sets
+train_size = int(len(data) * 0.8)
+train_data = data[:train_size]
+test_data = data[train_size:]
+
+# Normalize your data using Min-Max scaling
+scaler = MinMaxScaler()
+train_data = scaler.fit_transform(train_data)
+test_data = scaler.transform(test_data)
+
+# Define hyperparameters
+sequence_length = 10
+batch_size = 64
+epochs = 50
+
+# Create sequences for training and testing
+def create_sequences(data, sequence_length):
+    sequences = []
+    for i in range(len(data) - sequence_length):
+        seq = data[i:i+sequence_length]
+        target = data[i+sequence_length]
+        sequences.append((seq, target))
+    return np.array(sequences)
+
+train_sequences = create_sequences(train_data, sequence_length)
+test_sequences = create_sequences(test_data, sequence_length)
+
+# Define the LSTM model
+model = Sequential()
+model.add(LSTM(50, input_shape=(sequence_length, num_features), return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(50, return_sequences=False))
+model.add(Dropout(0.2))
+model.add(Dense(1, activation='linear'))
+
+# Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train the model
+model.fit(train_sequences[:, 0], train_sequences[:, 1], batch_size=batch_size, epochs=epochs)
+
+# Evaluate the model on the test data
+predicted_stock_prices = model.predict(test_sequences[:, 0])
+predicted_stock_prices = scaler.inverse_transform(predicted_stock_prices)
+actual_stock_prices = scaler.inverse_transform(test_sequences[:, 1])
+
+# Plot the results
+plt.plot(actual_stock_prices, label='Actual Prices')
+plt.plot(predicted_stock_prices, label='Predicted Prices')
+plt.legend()
+plt.show()
